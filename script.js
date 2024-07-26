@@ -16,15 +16,15 @@ document.addEventListener("keydown", handleKeydown);
 
 function handleKeydown(event) {
     if (!gameStarted) {
-        gameStarted = true;
         startGame();
-        document.removeEventListener("keydown", handleKeydown); // Remove the event listener to prevent multiple restarts
+        direction(event);
     } else {
         direction(event);
     }
 }
 
 function startGame() {
+    gameStarted = true;
     document.getElementById("instructions").style.display = "none";
     document.getElementById("gameOver").style.display = "none";
     document.getElementById("nameEntry").style.display = "none";
@@ -38,6 +38,13 @@ function startGame() {
     speed = 150;
     clearInterval(game);
     game = setInterval(draw, speed);
+}
+
+function resetGame() {
+    gameStarted = false;
+    document.getElementById("instructions").style.display = "block";
+    clearInterval(game);
+    startGame();
 }
 
 function direction(event) {
@@ -136,4 +143,3 @@ function displayHighScores() {
 }
 
 displayHighScores();
-
