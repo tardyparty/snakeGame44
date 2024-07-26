@@ -10,9 +10,19 @@ let d;
 let game;
 let speed;
 let highScores = JSON.parse(localStorage.getItem("highScores")) || [];
+let gameStarted = false;
 
-document.addEventListener("keydown", startGame);
-document.addEventListener("keydown", direction);
+document.addEventListener("keydown", handleKeydown);
+
+function handleKeydown(event) {
+    if (!gameStarted) {
+        gameStarted = true;
+        startGame();
+        document.removeEventListener("keydown", handleKeydown); // Remove the event listener to prevent multiple restarts
+    } else {
+        direction(event);
+    }
+}
 
 function startGame() {
     document.getElementById("instructions").style.display = "none";
