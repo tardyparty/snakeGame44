@@ -3,39 +3,43 @@ const ctx = canvas.getContext("2d");
 
 const box = 20;
 const canvasSize = 20;
-let snake = [];
-snake[0] = {
-    x: 9 * box,
-    y: 9 * box
-};
-
-let food = {
-    x: Math.floor(Math.random() * canvasSize) * box,
-    y: Math.floor(Math.random() * canvasSize) * box
-};
-
-let score = 0;
+let snake;
+let food;
+let score;
 let d;
+let game;
+let speed;
+let highScores = JSON.parse(localStorage.getItem("highScores")) || [];
 
+document.addEventListener("keydown", startGame);
 document.addEventListener("keydown", direction);
 
+function startGame() {
+    document.getElementById("instructions").style.display = "none";
+    document.getElementById("gameOver").style.display = "none";
+    document.getElementById("nameEntry").style.display = "none";
+    snake = [{ x: 9 * box, y: 9 * box }];
+    food = {
+        x: Math.floor(Math.random() * canvasSize) * box,
+        y: Math.floor(Math.random() * canvasSize) * box
+    };
+    score = 0;
+    d = null;
+    speed = 150;
+    clearInterval(game);
+    game = setInterval(draw, speed);
+}
+
 function direction(event) {
-    if (event.keyCode == 37 && d != "RIGHT") {
-        d = "LEFT";
-    } else if (event.keyCode == 38 && d != "DOWN") {
-        d = "UP";
-    } else if (event.keyCode == 39 && d != "LEFT") {
-        d = "RIGHT";
-    } else if (event.keyCode == 40 && d != "UP") {
-        d = "DOWN";
-    }
+    if (event.keyCode == 37 && d != "RIGHT") d = "LEFT";
+    else if (event.keyCode == 38 && d != "DOWN") d = "UP";
+    else if (event.keyCode == 39 && d != "LEFT") d = "RIGHT";
+    else if (event.keyCode == 40 && d != "UP") d = "DOWN";
 }
 
 function collision(newHead, array) {
     for (let i = 0; i < array.length; i++) {
-        if (newHead.x == array[i].x && newHead.y == array[i].y) {
-            return true;
-        }
+        if (newHead.x == array[i].x && newHead.y == array[i].y) return true;
     }
     return false;
 }
@@ -68,17 +72,22 @@ function draw() {
             x: Math.floor(Math.random() * canvasSize) * box,
             y: Math.floor(Math.random() * canvasSize) * box
         };
+        if (speed > 50) {
+            speed -= 5;
+            clearInterval(game);
+            game = setInterval(draw, speed);
+        }
     } else {
         snake.pop();
     }
 
-    let newHead = {
-        x: snakeX,
-        y: snakeY
-    };
+    let newHead = { x: snakeX, y: snakeY };
 
     if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision(newHead, snake)) {
         clearInterval(game);
+        document.getElementById("finalScore").innerText = score;
+        document.getElementById("gameOver").style.display = "block";
+        checkHighScore();
     }
 
     snake.unshift(newHead);
@@ -88,4 +97,33 @@ function draw() {
     ctx.fillText(score, 2 * box, 1.6 * box);
 }
 
-let game = setInterval(draw, 100);
+function checkHighScore() {
+    let lowestHighScore = highScores[highScores.length - 1]?.score || 0;
+    if (score > lowestHighScore || highScores.length < 5) {
+        document.getElementById("nameEntry").style.display = "block";
+    }
+}
+
+function saveHighScore() {
+    let name = document.getElementById("playerName").value;
+    if (!name) return;
+    highScores.push({ name: name, score: score });
+    highScores.sort((a, b) => b.score - a.score);
+    if (highScores.length > 5) highScores.pop();
+    localStorage.setItem("highScores", JSON.stringify(highScores));
+    document.getElementById("nameEntry").style.display = "none";
+    displayHighScores();
+}
+
+function displayHighScores() {
+    const scoreList = document.getElementById("scoreList");
+    scoreList.innerHTML = "";
+    highScores.forEach(({ name, score }) => {
+        const li = document.createElement("li");
+        li.textContent = `${name} - ${score}`;
+        scoreList.appendChild(li);
+    });
+}
+
+displayHighScores();
+
