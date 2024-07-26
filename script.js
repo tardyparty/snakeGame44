@@ -11,6 +11,9 @@ let game;
 let speed;
 let highScores = JSON.parse(localStorage.getItem("highScores")) || [];
 let gameStarted = false;
+let lastTime = 0;
+let frameRate = 10;
+let frameDelay = 1000 / frameRate;
 
 document.addEventListener("keydown", handleKeydown);
 
@@ -36,14 +39,14 @@ function startGame() {
     score = 0;
     d = null;
     speed = 150;
-    clearInterval(game);
-    game = setInterval(draw, speed);
+    lastTime = 0;
+    game = requestAnimationFrame(loop);
 }
 
 function resetGame() {
     gameStarted = false;
     document.getElementById("instructions").style.display = "block";
-    clearInterval(game);
+    cancelAnimationFrame(game);
     startGame();
 }
 
@@ -55,15 +58,19 @@ function direction(event) {
 }
 
 function collision(newHead, array) {
-    for (let i = 0; i < array.length; i++) {
-        if (newHead.x == array[i].x && newHead.y == array[i].y) return true;
+    return array.some(segment => segment.x === newHead.x && segment.y === newHead.y);
+}
+
+function loop(timestamp) {
+    if (timestamp - lastTime >= frameDelay) {
+        lastTime = timestamp;
+        draw();
     }
-    return false;
+    game = requestAnimationFrame(loop);
 }
 
 function draw() {
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (let i = 0; i < snake.length; i++) {
         ctx.fillStyle = (i == 0) ? "green" : "white";
@@ -91,8 +98,8 @@ function draw() {
         };
         if (speed > 50) {
             speed -= 5;
-            clearInterval(game);
-            game = setInterval(draw, speed);
+            frameRate = Math.max(10, 60 - score);
+            frameDelay = 1000 / frameRate;
         }
     } else {
         snake.pop();
@@ -101,7 +108,7 @@ function draw() {
     let newHead = { x: snakeX, y: snakeY };
 
     if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision(newHead, snake)) {
-        clearInterval(game);
+        cancelAnimationFrame(game);
         document.getElementById("finalScore").innerText = score;
         document.getElementById("gameOver").style.display = "block";
         checkHighScore();
