@@ -1,200 +1,56 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCdV-b9VrWRIQXbn9RcXEZf9tZh_ltrdlM",
-    authDomain: "snake-150af.firebaseapp.com",
-    projectId: "snake-150af",
-    storageBucket: "snake-150af.appspot.com",
-    messagingSenderId: "896495502826",
-    appId: "1:896495502826:web:9a54c439c765ee81d4de93",
-    measurementId: "G-C5FVFL7BHM"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-const box = 25; // Adjusted for the larger canvas size
-const canvasSize = 20;
-let snake;
-let food;
-let score;
-let d;
-let game;
-let speed;
-let highScores = [];
-let gameStarted = false;
-let lastTime = 0;
-let frameRate = 10;
-let frameDelay = 1000 / frameRate;
-let personalHighScore = 0;
-
-document.addEventListener("keydown", handleKeydown);
-
-async function fetchHighScores() {
-    try {
-        const highScoresQuery = query(collection(db, "highScores"), orderBy("score", "desc"), limit(5));
-        const querySnapshot = await getDocs(highScoresQuery);
-        highScores = querySnapshot.docs.map(doc => doc.data());
-        displayHighScores();
-    } catch (error) {
-        console.error("Error fetching high scores: ", error);
-    }
-}
-
-function handleKeydown(event) {
-    console.log("Keydown event detected: ", event.keyCode);
-    if (!gameStarted) {
-        console.log("Starting game");
-        startGame();
-        direction(event);
-    } else {
-        direction(event);
-    }
-}
-
-function startGame() {
-    gameStarted = true;
-    document.getElementById("instructions").style.display = "none";
-    document.getElementById("gameOver").style.display = "none";
-    document.getElementById("nameEntry").style.display = "none";
-    snake = [{ x: 9 * box, y: 9 * box }];
-    food = {
-        x: Math.floor(Math.random() * canvasSize) * box,
-        y: Math.floor(Math.random() * canvasSize) * box
-    };
-    score = 0;
-    d = null;
-    speed = 150; // Adjusted speed
-    lastTime = 0;
-    frameRate = 10;
-    frameDelay = 1000 / frameRate;
-    game = requestAnimationFrame(loop);
-}
-
-function resetGame() {
-    gameStarted = false;
-    document.getElementById("instructions").style.display = "block";
-    cancelAnimationFrame(game);
-    startGame();
-}
-
-function direction(event) {
-    console.log("Direction event detected: ", event.keyCode);
-    if (event.keyCode == 37 && d != "RIGHT") d = "LEFT";
-    else if (event.keyCode == 38 && d != "DOWN") d = "UP";
-    else if (event.keyCode == 39 && d != "LEFT") d = "RIGHT";
-    else if (event.keyCode == 40 && d != "UP") d = "DOWN";
-    console.log("Direction set to: ", d);
-}
-
-function collision(newHead, array) {
-    return array.some(segment => segment.x === newHead.x && segment.y === newHead.y);
-}
-
-function loop(timestamp) {
-    if (timestamp - lastTime >= speed) {
-        lastTime = timestamp;
-        draw();
-    }
-    game = requestAnimationFrame(loop);
-}
-
-function draw() {
-    console.log("Drawing frame");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = 0; i < snake.length; i++) {
-        ctx.fillStyle = (i == 0) ? "#00ff00" : "#ffffff";
-        ctx.fillRect(snake[i].x, snake[i].y, box, box);
-        ctx.strokeStyle = "#ff0000";
-        ctx.strokeRect(snake[i].x, snake[i].y, box, box);
-    }
-
-    ctx.fillStyle = "#ff0000";
-    ctx.fillRect(food.x, food.y, box, box);
-
-    let snakeX = snake[0].x;
-    let snakeY = snake[0].y;
-
-    if (d == "LEFT") snakeX -= box;
-    if (d == "UP") snakeY -= box;
-    if (d == "RIGHT") snakeX += box;
-    if (d == "DOWN") snakeY += box;
-
-    if (snakeX == food.x && snakeY == food.y) {
-        score++;
-        food = {
-            x: Math.floor(Math.random() * canvasSize) * box,
-            y: Math.floor(Math.random() * canvasSize) * box
-        };
-        if (speed > 50) {
-            speed -= 5; // Adjust speed decrease rate if needed
-        }
-    } else {
-        snake.pop();
-    }
-
-    let newHead = { x: snakeX, y: snakeY };
-
-    // Check collision with walls
-    if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision(newHead, snake)) {
-        cancelAnimationFrame(game);
-        document.getElementById("finalScore").innerText = score;
-        document.getElementById("gameOver").style.display = "block";
-        checkHighScore();
-        if (score > personalHighScore) {
-            personalHighScore = score;
-            document.getElementById("personalHighScore").innerText = personalHighScore;
-        }
-        gameStarted = false; // Ensure game does not continue after game over
-        return;
-    }
-
-    snake.unshift(newHead);
-
-    ctx.fillStyle = "white";
-    ctx.font = "45px Changa one";
-    ctx.fillText(score, 2 * box, 1.6 * box);
-}
-
-function checkHighScore() {
-    let lowestHighScore = highScores[highScores.length - 1]?.score || 0;
-    if (score > lowestHighScore || highScores.length < 5) {
-        document.getElementById("nameEntry").style.display = "block";
-    }
-}
-
-window.saveHighScore = async function() {
-    let name = document.getElementById("playerName").value;
-    if (!name) return;
-    try {
-        await addDoc(collection(db, "highScores"), {
-            name: name,
-            score: score,
-            timestamp: new Date()
-        });
-        fetchHighScores();
-        document.getElementById("nameEntry").style.display = "none";
-    } catch (e) {
-        console.error("Error adding document: ", e);
-    }
-}
-
-function displayHighScores() {
-    const scoreList = document.getElementById("scoreList");
-    scoreList.innerHTML = "";
-    highScores.forEach(({ name, score }) => {
-        const li = document.createElement("li");
-        li.textContent = `${name} - ${score}`;
-        scoreList.appendChild(li);
-    });
-}
-
-fetchHighScores();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game with Firebase</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="authContainer">
+        <h1>Sign In</h1>
+        <form id="signInForm">
+            <input type="email" id="signInEmail" placeholder="Email" required>
+            <input type="password" id="signInPassword" placeholder="Password" required>
+            <button type="submit">Sign In</button>
+        </form>
+        <p>Don't have an account? <a href="#" id="showSignUp">Sign Up</a></p>
+    </div>
+    <div id="mainContainer" style="display:none;">
+        <div id="highScores">
+            <h2>High Scores</h2>
+            <ol id="scoreList"></ol>
+        </div>
+        <div id="gameArea">
+            <h1>Snake Game</h1>
+            <canvas id="gameCanvas" width="500" height="500"></canvas>
+            <div id="gameOver" style="display: none;">
+                <h1>Game Over</h1>
+                <p>Your Score: <span id="finalScore"></span></p>
+                <button onclick="resetGame()">Play Again</button>
+            </div>
+            <div id="instructions">
+                <h1>Snake Game</h1>
+                <p>Press any arrow key to start</p>
+                <p>Use the arrow keys to control the snake</p>
+            </div>
+            <div id="nameEntry" style="display: none;">
+                <input type="text" id="playerName" placeholder="Enter your name">
+                <button onclick="saveHighScore()">Submit</button>
+            </div>
+            <div id="userInfo">
+                <p>Username: <span id="username">Future User</span></p>
+                <p>Personal High Score: <span id="personalHighScore">0</span></p>
+            </div>
+        </div>
+        <div id="instructionsArea">
+            <h2>Instructions</h2>
+            <p>Use arrow keys to move the snake.</p>
+            <p>Eat the red food to grow.</p>
+            <p>Avoid colliding with walls and yourself.</p>
+            <p>Try to beat the high scores!</p>
+        </div>
+    </div>
+    <script type="module" src="./script.js"></script>
+</body>
+</html>
