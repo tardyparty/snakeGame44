@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, updateDoc, doc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -228,23 +228,8 @@ function draw() {
     if (d == "RIGHT") snakeX += box;
     if (d == "DOWN") snakeY += box;
 
-    if (snakeX == food.x && snakeY == food.y) {
-        score++;
-        food = {
-            x: Math.floor(Math.random() * canvasSize) * box,
-            y: Math.floor(Math.random() * canvasSize) * box
-        };
-        if (speed > 50) {
-            speed -= 5; // Adjust speed decrease rate if needed
-        }
-    } else {
-        snake.pop();
-    }
-
-    let newHead = { x: snakeX, y: snakeY };
-
     // Check collision with walls
-    if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision(newHead, snake)) {
+    if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision({x: snakeX, y: snakeY}, snake)) {
         cancelAnimationFrame(game);
         document.getElementById("finalScore").innerText = score;
         document.getElementById("gameOver").style.display = "block";
@@ -257,7 +242,25 @@ function draw() {
         return;
     }
 
+    // Create new head
+    let newHead = { x: snakeX, y: snakeY };
+
+    // Add new head
     snake.unshift(newHead);
+
+    // Remove the last part of snake if no food is eaten
+    if (!(snakeX == food.x && snakeY == food.y)) {
+        snake.pop();
+    } else {
+        score++;
+        food = {
+            x: Math.floor(Math.random() * canvasSize) * box,
+            y: Math.floor(Math.random() * canvasSize) * box
+        };
+        if (speed > 50) {
+            speed -= 5; // Adjust speed decrease rate if needed
+        }
+    }
 
     ctx.fillStyle = "white";
     ctx.font = "45px Changa one";
