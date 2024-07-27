@@ -19,27 +19,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-const box = 25; // Adjusted for the larger canvas size
-const canvasSize = 20;
-let snake;
-let food;
-let score;
-let d;
-let game;
-let speed;
-let highScores = [];
-let gameStarted = false;
-let lastTime = 0;
-let frameRate = 10;
-let frameDelay = 1000 / frameRate;
-let personalHighScore = 0;
-let currentUser = null;
-
-document.addEventListener("keydown", handleKeydown);
-
 // Authentication elements
 const authContainer = document.getElementById("authContainer");
 const mainContainer = document.getElementById("mainContainer");
@@ -47,6 +26,9 @@ const signInForm = document.getElementById("signInForm");
 const signInEmail = document.getElementById("signInEmail");
 const signInPassword = document.getElementById("signInPassword");
 const showSignUp = document.getElementById("showSignUp");
+
+let currentUser = null;
+let personalHighScore = 0;
 
 // Authentication logic
 signInForm.addEventListener("submit", (e) => {
@@ -114,6 +96,7 @@ onAuthStateChanged(auth, (user) => {
         fetchHighScores();
         authContainer.style.display = "none";
         mainContainer.style.display = "flex";
+        startPhaserGame();
     } else {
         // User is signed out
         console.log("User signed out");
@@ -148,149 +131,6 @@ async function fetchPersonalHighScore(email) {
     }
 }
 
-function handleKeydown(event) {
-    console.log("Keydown event detected: ", event.keyCode);
-    if (!gameStarted) {
-        console.log("Starting game");
-        startGame();
-        direction(event);
-    } else {
-        direction(event);
-    }
-}
-
-function startGame() {
-    gameStarted = true;
-    document.getElementById("instructions").style.display = "none";
-    document.getElementById("gameOver").style.display = "none";
-    document.getElementById("nameEntry").style.display = "none";
-    snake = [{ x: 9 * box, y: 9 * box }];
-    food = {
-        x: Math.floor(Math.random() * canvasSize) * box,
-        y: Math.floor(Math.random() * canvasSize) * box
-    };
-    score = 0;
-    d = null;
-    speed = 150; // Adjusted speed
-    lastTime = 0;
-    frameRate = 10;
-    frameDelay = 1000 / frameRate;
-    game = requestAnimationFrame(loop);
-}
-
-function resetGame() {
-    gameStarted = false;
-    document.getElementById("instructions").style.display = "block";
-    cancelAnimationFrame(game);
-    startGame();
-}
-
-function direction(event) {
-    console.log("Direction event detected: ", event.keyCode);
-    if (event.keyCode == 37 && d != "RIGHT") d = "LEFT";
-    else if (event.keyCode == 38 && d != "DOWN") d = "UP";
-    else if (event.keyCode == 39 && d != "LEFT") d = "RIGHT";
-    else if (event.keyCode == 40 && d != "UP") d = "DOWN";
-    console.log("Direction set to: ", d);
-}
-
-function collision(newHead, array) {
-    return array.some(segment => segment.x === newHead.x && segment.y === newHead.y);
-}
-
-function loop(timestamp) {
-    if (timestamp - lastTime >= speed) {
-        lastTime = timestamp;
-        draw();
-    }
-    game = requestAnimationFrame(loop);
-}
-
-function draw() {
-    console.log("Drawing frame");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = 0; i < snake.length; i++) {
-        ctx.fillStyle = (i == 0) ? "#00ff00" : "#ffffff";
-        ctx.fillRect(snake[i].x, snake[i].y, box, box);
-        ctx.strokeStyle = "#ff0000";
-        ctx.strokeRect(snake[i].x, snake[i].y, box, box);
-    }
-
-    ctx.fillStyle = "#ff0000";
-    ctx.fillRect(food.x, food.y, box, box);
-
-    let snakeX = snake[0].x;
-    let snakeY = snake[0].y;
-
-    if (d == "LEFT") snakeX -= box;
-    if (d == "UP") snakeY -= box;
-    if (d == "RIGHT") snakeX += box;
-    if (d == "DOWN") snakeY += box;
-
-    // Check collision with walls
-    if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision({x: snakeX, y: snakeY}, snake)) {
-        cancelAnimationFrame(game);
-        document.getElementById("finalScore").innerText = score;
-        document.getElementById("gameOver").style.display = "block";
-        checkHighScore();
-        if (score > personalHighScore) {
-            personalHighScore = score;
-            document.getElementById("personalHighScore").innerText = personalHighScore;
-        }
-        gameStarted = false; // Ensure game does not continue after game over
-        return;
-    }
-
-    // Create new head
-    let newHead = { x: snakeX, y: snakeY };
-
-    // Add new head
-    snake.unshift(newHead);
-
-    // Remove the last part of snake if no food is eaten
-    if (!(snakeX == food.x && snakeY == food.y)) {
-        snake.pop();
-    } else {
-        score++;
-        food = {
-            x: Math.floor(Math.random() * canvasSize) * box,
-            y: Math.floor(Math.random() * canvasSize) * box
-        };
-        if (speed > 50) {
-            speed -= 5; // Adjust speed decrease rate if needed
-        }
-    }
-
-    ctx.fillStyle = "white";
-    ctx.font = "45px Changa one";
-    ctx.fillText(score, 2 * box, 1.6 * box);
-}
-
-function checkHighScore() {
-    let lowestHighScore = highScores[highScores.length - 1]?.score || 0;
-    if (score > lowestHighScore || highScores.length < 5) {
-        saveHighScore();
-    }
-}
-
-window.saveHighScore = async function() {
-    if (!currentUser) return;
-    const name = currentUser.email;
-    try {
-        await addDoc(collection(db, "highScores"), {
-            name: name,
-            email: currentUser.email,
-            score: score,
-            timestamp: new Date()
-        });
-        fetchHighScores();
-        document.getElementById("nameEntry").style.display = "none";
-    } catch (e) {
-        console.error("Error adding document: ", e);
-    }
-}
-
 function displayHighScores() {
     const scoreList = document.getElementById("scoreList");
     scoreList.innerHTML = "";
@@ -301,4 +141,120 @@ function displayHighScores() {
     });
 }
 
-fetchHighScores();
+async function saveHighScore() {
+    if (!currentUser) return;
+    const name = currentUser.email;
+    try {
+        await addDoc(collection(db, "highScores"), {
+            name: name,
+            email: currentUser.email,
+            score: score,
+            timestamp: new Date()
+        });
+        fetchHighScores();
+    } catch (e) {
+        console.error("Error adding document: ", e);
+    }
+}
+
+// Phaser game setup
+let game;
+let snake;
+let food;
+let cursors;
+let score = 0;
+let scoreText;
+let direction = 'RIGHT';
+let newDirection = 'RIGHT';
+
+function startPhaserGame() {
+    const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: '#000000',
+        physics: {
+            default: 'arcade',
+            arcade: {
+                debug: false
+            }
+        },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+
+    game = new Phaser.Game(config);
+}
+
+function preload() {
+    this.load.image('snake', 'assets/snake.png');
+    this.load.image('food', 'assets/food.png');
+}
+
+function create() {
+    snake = this.physics.add.group();
+
+    for (let i = 0; i < 3; i++) {
+        let part = snake.create(100 + i * 16, 100, 'snake');
+        part.body.setSize(16, 16);
+        part.body.setCollideWorldBounds(true);
+    }
+
+    food = this.physics.add.image(200, 200, 'food');
+    food.setCollideWorldBounds(true);
+
+    scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#FFFFFF' });
+
+    cursors = this.input.keyboard.createCursorKeys();
+}
+
+function update() {
+    if (cursors.left.isDown && direction !== 'RIGHT') {
+        newDirection = 'LEFT';
+    } else if (cursors.right.isDown && direction !== 'LEFT') {
+        newDirection = 'RIGHT';
+    } else if (cursors.up.isDown && direction !== 'DOWN') {
+        newDirection = 'UP';
+    } else if (cursors.down.isDown && direction !== 'UP') {
+        newDirection = 'DOWN';
+    }
+
+    if (Phaser.Geom.Intersects.RectangleToRectangle(snake.getChildren()[0].getBounds(), food.getBounds())) {
+        food.setPosition(Phaser.Math.Between(0, 800), Phaser.Math.Between(0, 600));
+        let newPart = snake.create(-10, -10, 'snake');
+        newPart.body.setSize(16, 16);
+        score += 10;
+        scoreText.setText('Score: ' + score);
+    }
+
+    let tail = snake.getChildren().pop();
+    tail.x = snake.getChildren()[0].x;
+    tail.y = snake.getChildren()[0].y;
+
+    if (newDirection === 'LEFT') {
+        tail.x -= 16;
+    } else if (newDirection === 'RIGHT') {
+        tail.x += 16;
+    } else if (newDirection === 'UP') {
+        tail.y -= 16;
+    } else if (newDirection === 'DOWN') {
+        tail.y += 16;
+    }
+
+    snake.getChildren().unshift(tail);
+    direction = newDirection;
+
+    // Check for collision with self or walls
+    if (tail.x < 0 || tail.y < 0 || tail.x >= 800 || tail.y >= 600 || collision(tail, snake.getChildren().slice(1))) {
+        this.physics.pause();
+        saveHighScore();
+        scoreText.setText('Game Over! Score: ' + score);
+    }
+}
+
+function collision(newHead, array) {
+    return array.some(segment => segment.x === newHead.x && segment.y === newHead.y);
+}
