@@ -1,3 +1,23 @@
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, addDoc, getDocs, orderBy, query, limit } from "firebase/firestore";
+import { getAnalytics } from "firebase/analytics";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCdV-b9VrWRIQXbn9RcXEZf9tZh_ltrdlM",
+  authDomain: "snake-150af.firebaseapp.com",
+  projectId: "snake-150af",
+  storageBucket: "snake-150af.appspot.com",
+  messagingSenderId: "896495502826",
+  appId: "1:896495502826:web:9a54c439c765ee81d4de93",
+  measurementId: "G-C5FVFL7BHM"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -9,13 +29,20 @@ let score;
 let d;
 let game;
 let speed;
-let highScores = JSON.parse(localStorage.getItem("highScores")) || [];
+let highScores = [];
 let gameStarted = false;
 let lastTime = 0;
 let frameRate = 10;
 let frameDelay = 1000 / frameRate;
 
 document.addEventListener("keydown", handleKeydown);
+
+async function fetchHighScores() {
+    const highScoresQuery = query(collection(db, "highScores"), orderBy("score", "desc"), limit(5));
+    const querySnapshot = await getDocs(highScoresQuery);
+    highScores = querySnapshot.docs.map(doc => doc.data());
+    displayHighScores();
+}
 
 function handleKeydown(event) {
     if (!gameStarted) {
@@ -38,7 +65,7 @@ function startGame() {
     };
     score = 0;
     d = null;
-    speed = 100; // Starting speed adjusted to 100ms per frame
+    speed = 150; // Starting speed adjusted to 150ms per frame
     lastTime = 0;
     frameRate = 10;
     frameDelay = 1000 / frameRate;
@@ -99,7 +126,7 @@ function draw() {
             y: Math.floor(Math.random() * canvasSize) * box
         };
         if (speed > 50) {
-            speed -= 5; // Adjust speed decrease rate if needed
+            speed -= 2; // Adjust speed decrease rate if needed
         }
     } else {
         snake.pop();
@@ -128,15 +155,20 @@ function checkHighScore() {
     }
 }
 
-function saveHighScore() {
+async function saveHighScore() {
     let name = document.getElementById("playerName").value;
     if (!name) return;
-    highScores.push({ name: name, score: score });
-    highScores.sort((a, b) => b.score - a.score);
-    if (highScores.length > 5) highScores.pop();
-    localStorage.setItem("highScores", JSON.stringify(highScores));
-    document.getElementById("nameEntry").style.display = "none";
-    displayHighScores();
+    try {
+        await addDoc(collection(db, "highScores"), {
+            name: name,
+            score: score,
+            timestamp: new Date()
+        });
+        fetchHighScores();
+        document.getElementById("nameEntry").style.display = "none";
+    } catch (e) {
+        console.error("Error adding document: ", e);
+    }
 }
 
 function displayHighScores() {
@@ -149,4 +181,5 @@ function displayHighScores() {
     });
 }
 
-displayHighScores();
+fetchHighScores();
+
