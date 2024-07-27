@@ -49,7 +49,9 @@ async function fetchHighScores() {
 }
 
 function handleKeydown(event) {
+    console.log("Keydown event detected: ", event.keyCode);
     if (!gameStarted) {
+        console.log("Starting game");
         startGame();
         direction(event);
     } else {
@@ -84,10 +86,12 @@ function resetGame() {
 }
 
 function direction(event) {
+    console.log("Direction event detected: ", event.keyCode);
     if (event.keyCode == 37 && d != "RIGHT") d = "LEFT";
     else if (event.keyCode == 38 && d != "DOWN") d = "UP";
     else if (event.keyCode == 39 && d != "LEFT") d = "RIGHT";
     else if (event.keyCode == 40 && d != "UP") d = "DOWN";
+    console.log("Direction set to: ", d);
 }
 
 function collision(newHead, array) {
@@ -103,6 +107,7 @@ function loop(timestamp) {
 }
 
 function draw() {
+    console.log("Drawing frame");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (let i = 0; i < snake.length; i++) {
@@ -147,6 +152,7 @@ function draw() {
             personalHighScore = score;
             document.getElementById("personalHighScore").innerText = personalHighScore;
         }
+        return;
     }
 
     snake.unshift(newHead);
