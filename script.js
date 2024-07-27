@@ -39,6 +39,7 @@ let scoreText;
 let direction = 'RIGHT';
 let newDirection = 'RIGHT';
 let gameStarted = false;
+let gameOver = false;
 
 // Authentication logic
 signInForm.addEventListener("submit", (e) => {
@@ -214,7 +215,7 @@ function create() {
     cursors = this.input.keyboard.createCursorKeys();
 
     this.time.addEvent({
-        delay: 100,
+        delay: 150, // Slower initial speed
         callback: moveSnake,
         callbackScope: this,
         loop: true
@@ -222,6 +223,8 @@ function create() {
 }
 
 function moveSnake() {
+    if (gameOver) return; // Do nothing if the game is over
+
     let tail = snake.getChildren().pop();
     tail.x = snake.getChildren()[0].x;
     tail.y = snake.getChildren()[0].y;
@@ -240,7 +243,7 @@ function moveSnake() {
     direction = newDirection;
 
     if (Phaser.Geom.Intersects.CircleToRectangle(food, snake.getChildren()[0].body)) {
-        food.setPosition(Phaser.Math.Between(0, 800), Phaser.Math.Between(0, 600));
+        food.setPosition(Phaser.Math.Between(0, 784), Phaser.Math.Between(0, 584));
         let newPart = snake.create(-10, -10, 'snake');
         newPart.body.setSize(16, 16);
         score += 10;
@@ -249,6 +252,7 @@ function moveSnake() {
 
     // Check for collision with self or walls
     if (tail.x < 0 || tail.y < 0 || tail.x >= 800 || tail.y >= 600 || collision(tail, snake.getChildren().slice(1))) {
+        gameOver = true;
         this.physics.pause();
         saveHighScore();
         scoreText.setText('Game Over! Score: ' + score);
