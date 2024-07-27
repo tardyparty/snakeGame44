@@ -38,8 +38,10 @@ function startGame() {
     };
     score = 0;
     d = null;
-    speed = 150;
+    speed = 100; // Starting speed adjusted to 100ms per frame
     lastTime = 0;
+    frameRate = 10;
+    frameDelay = 1000 / frameRate;
     game = requestAnimationFrame(loop);
 }
 
@@ -62,7 +64,7 @@ function collision(newHead, array) {
 }
 
 function loop(timestamp) {
-    if (timestamp - lastTime >= frameDelay) {
+    if (timestamp - lastTime >= speed) {
         lastTime = timestamp;
         draw();
     }
@@ -97,9 +99,7 @@ function draw() {
             y: Math.floor(Math.random() * canvasSize) * box
         };
         if (speed > 50) {
-            speed -= 5;
-            frameRate = Math.max(10, 60 - score);
-            frameDelay = 1000 / frameRate;
+            speed -= 5; // Adjust speed decrease rate if needed
         }
     } else {
         snake.pop();
@@ -150,3 +150,4 @@ function displayHighScores() {
 }
 
 displayHighScores();
+
