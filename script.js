@@ -29,6 +29,7 @@ const showSignUp = document.getElementById("showSignUp");
 
 let currentUser = null;
 let personalHighScore = 0;
+let highScores = [];
 
 // Authentication logic
 signInForm.addEventListener("submit", (e) => {
