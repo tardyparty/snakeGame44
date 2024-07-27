@@ -4,61 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake Game with Phaser and Firebase</title>
+    <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            background-color: black;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-            margin: auto;
-        }
-        #authContainer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        #mainContainer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 100vh;
-            width: 100%;
-            padding: 20px;
-        }
-        #highScores, #instructionsArea {
-            width: 200px;
-            max-height: 100%;
-            overflow-y: auto;
-        }
-        #highScores h2, #instructionsArea h2 {
-            color: #00ff00;
-        }
-        #highScores ol, #instructionsArea p {
-            color: #fff;
-            text-align: left;
-        }
-        #gameContainer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex: 1;
-        }
-        #username, #personalHighScore {
-            margin-top: 20px;
-        }
-    </style>
 </head>
 <body>
     <div id="authContainer">
@@ -85,7 +32,7 @@
             <p>Avoid colliding with walls and yourself.</p>
             <p>Try to beat the high scores!</p>
         </div>
-        <div>
+        <div id="userDetails">
             <p>Username: <span id="username">Future User</span></p>
             <p>Personal High Score: <span id="personalHighScore">0</span></p>
         </div>
