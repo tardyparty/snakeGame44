@@ -6,8 +6,22 @@
     <title>Snake Game with Phaser and Firebase</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
-        body { margin: 0; }
-        canvas { display: block; margin: 0 auto; }
+        body {
+            margin: 0;
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            margin: auto;
+        }
         #authContainer {
             display: flex;
             flex-direction: column;
@@ -20,6 +34,7 @@
             justify-content: space-between;
             align-items: center;
             height: 100vh;
+            width: 100%;
             padding: 20px;
         }
         #highScores, #instructionsArea {
@@ -33,6 +48,15 @@
         #highScores ol, #instructionsArea p {
             color: #fff;
             text-align: left;
+        }
+        #gameContainer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+        }
+        #username, #personalHighScore {
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -51,7 +75,9 @@
             <h2>High Scores</h2>
             <ol id="scoreList"></ol>
         </div>
-        <div id="gameContainer"></div>
+        <div id="gameContainer">
+            <canvas id="gameCanvas"></canvas>
+        </div>
         <div id="instructionsArea">
             <h2>Instructions</h2>
             <p>Use arrow keys to move the snake.</p>
