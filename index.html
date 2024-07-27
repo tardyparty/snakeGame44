@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game with Firebase</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Snake Game with Phaser and Firebase</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; margin: 0 auto; }
+    </style>
 </head>
 <body>
     <div id="authContainer">
@@ -21,28 +25,7 @@
             <h2>High Scores</h2>
             <ol id="scoreList"></ol>
         </div>
-        <div id="gameArea">
-            <h1>Snake Game</h1>
-            <canvas id="gameCanvas" width="500" height="500"></canvas>
-            <div id="gameOver" style="display: none;">
-                <h1>Game Over</h1>
-                <p>Your Score: <span id="finalScore"></span></p>
-                <button onclick="resetGame()">Play Again</button>
-            </div>
-            <div id="instructions">
-                <h1>Snake Game</h1>
-                <p>Press any arrow key to start</p>
-                <p>Use the arrow keys to control the snake</p>
-            </div>
-            <div id="nameEntry" style="display: none;">
-                <input type="text" id="playerName" placeholder="Enter your name">
-                <button onclick="saveHighScore()">Submit</button>
-            </div>
-            <div id="userInfo">
-                <p>Username: <span id="username">Future User</span></p>
-                <p>Personal High Score: <span id="personalHighScore">0</span></p>
-            </div>
-        </div>
+        <div id="gameContainer"></div>
         <div id="instructionsArea">
             <h2>Instructions</h2>
             <p>Use arrow keys to move the snake.</p>
@@ -51,6 +34,6 @@
             <p>Try to beat the high scores!</p>
         </div>
     </div>
-    <script type="module" src="./script.js"></script>
+    <script type="module" src="./game.js"></script>
 </body>
 </html>
