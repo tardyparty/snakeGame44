@@ -33,6 +33,7 @@ let gameStarted = false;
 let lastTime = 0;
 let frameRate = 10;
 let frameDelay = 1000 / frameRate;
+let personalHighScore = 0;
 
 document.addEventListener("keydown", handleKeydown);
 
@@ -105,13 +106,13 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (let i = 0; i < snake.length; i++) {
-        ctx.fillStyle = (i == 0) ? "green" : "white";
+        ctx.fillStyle = (i == 0) ? "#00ff00" : "#ffffff";
         ctx.fillRect(snake[i].x, snake[i].y, box, box);
-        ctx.strokeStyle = "red";
+        ctx.strokeStyle = "#ff0000";
         ctx.strokeRect(snake[i].x, snake[i].y, box, box);
     }
 
-    ctx.fillStyle = "red";
+    ctx.fillStyle = "#ff0000";
     ctx.fillRect(food.x, food.y, box, box);
 
     let snakeX = snake[0].x;
@@ -142,46 +143,6 @@ function draw() {
         document.getElementById("finalScore").innerText = score;
         document.getElementById("gameOver").style.display = "block";
         checkHighScore();
-    }
-
-    snake.unshift(newHead);
-
-    ctx.fillStyle = "white";
-    ctx.font = "45px Changa one";
-    ctx.fillText(score, 2 * box, 1.6 * box);
-}
-
-function checkHighScore() {
-    let lowestHighScore = highScores[highScores.length - 1]?.score || 0;
-    if (score > lowestHighScore || highScores.length < 5) {
-        document.getElementById("nameEntry").style.display = "block";
-    }
-}
-
-window.saveHighScore = async function() {
-    let name = document.getElementById("playerName").value;
-    if (!name) return;
-    try {
-        await addDoc(collection(db, "highScores"), {
-            name: name,
-            score: score,
-            timestamp: new Date()
-        });
-        fetchHighScores();
-        document.getElementById("nameEntry").style.display = "none";
-    } catch (e) {
-        console.error("Error adding document: ", e);
-    }
-}
-
-function displayHighScores() {
-    const scoreList = document.getElementById("scoreList");
-    scoreList.innerHTML = "";
-    highScores.forEach(({ name, score }) => {
-        const li = document.createElement("li");
-        li.textContent = `${name} - ${score}`;
-        scoreList.appendChild(li);
-    });
-}
-
-fetchHighScores();
+        if (score > personalHighScore) {
+            personalHighScore = score;
+            document.getElementById("personalHighScore").innerText = personalHighScore;
