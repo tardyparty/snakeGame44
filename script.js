@@ -30,7 +30,7 @@ let highScores = [];
 let gameInterval;
 let canvas, ctx;
 let snake = [];
-let direction = { x: 1, y: 0 };
+let direction = { x: 10, y: 0 };
 let food = { x: 0, y: 0 };
 let score = 0;
 let changingDirection = false;
@@ -95,6 +95,7 @@ auth.onAuthStateChanged((user) => {
         fetchHighScores();
         authContainer.style.display = "none";
         mainContainer.style.display = "flex";
+        startGame();
     } else {
         console.log("User signed out");
         currentUser = null;
@@ -175,6 +176,8 @@ function startGame() {
     changingDirection = false;
     gameStarted = false;
     createFood();
+    drawSnake(); // Draw initial state of the snake
+    drawFood(); // Draw initial food
 }
 
 function handleFirstKeyDown(event) {
