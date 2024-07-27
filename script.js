@@ -43,7 +43,9 @@ async function fetchHighScores() {
 }
 
 function handleKeydown(event) {
+    console.log("Keydown event detected");
     if (!gameStarted) {
+        console.log("Starting game");
         startGame();
         direction(event);
     } else {
