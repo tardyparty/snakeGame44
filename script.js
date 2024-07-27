@@ -31,6 +31,7 @@ let snake = [];
 let direction = { x: 1, y: 0 };
 let food = { x: 0, y: 0 };
 let score = 0;
+let changingDirection = false;  // Initialize the changingDirection variable
 
 // Authentication logic
 signInForm.addEventListener("submit", (e) => {
@@ -180,7 +181,7 @@ function main() {
         return;
     }
 
-    changingDirection = false;
+    changingDirection = false;  // Reset changingDirection to false
     clearCanvas();
     drawFood();
     advanceSnake();
@@ -253,6 +254,8 @@ function changeDirection(event) {
     if (keyPressed === DOWN_KEY && !goingUp) {
         direction = { x: 0, y: 10 };
     }
+
+    changingDirection = true;  // Set changingDirection to true when direction changes
 }
 
 function hasGameEnded() {
