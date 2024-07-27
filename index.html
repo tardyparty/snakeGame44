@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake Game</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
 </head>
 <body>
     <div id="gameContainer">
@@ -12,7 +15,7 @@
         <div id="gameOver">
             <h1>Game Over</h1>
             <p>Your Score: <span id="finalScore"></span></p>
-            <button onclick="startGame()">Play Again</button>
+            <button onclick="resetGame()">Play Again</button>
         </div>
         <div id="instructions">
             <h1>Snake Game</h1>
@@ -30,5 +33,5 @@
     </div>
     <script src="script.js"></script>
 </body>
-
+</html>
 
