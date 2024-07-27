@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, updateDoc, doc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
 // Your web app's Firebase configuration
@@ -36,6 +36,7 @@ let lastTime = 0;
 let frameRate = 10;
 let frameDelay = 1000 / frameRate;
 let personalHighScore = 0;
+let currentUser = null;
 
 document.addEventListener("keydown", handleKeydown);
 
@@ -107,13 +108,16 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         // User is signed in
         console.log("User signed in:", user.email);
+        currentUser = user;
         document.getElementById("username").innerText = user.email;
+        fetchPersonalHighScore(user.email);
         fetchHighScores();
         authContainer.style.display = "none";
         mainContainer.style.display = "flex";
     } else {
         // User is signed out
         console.log("User signed out");
+        currentUser = null;
         authContainer.style.display = "block";
         mainContainer.style.display = "none";
     }
@@ -127,6 +131,20 @@ async function fetchHighScores() {
         displayHighScores();
     } catch (error) {
         console.error("Error fetching high scores: ", error);
+    }
+}
+
+async function fetchPersonalHighScore(email) {
+    try {
+        const personalHighScoreQuery = query(collection(db, "highScores"), where("email", "==", email), orderBy("score", "desc"), limit(1));
+        const querySnapshot = await getDocs(personalHighScoreQuery);
+        if (!querySnapshot.empty) {
+            const userHighScore = querySnapshot.docs[0].data().score;
+            personalHighScore = userHighScore;
+            document.getElementById("personalHighScore").innerText = personalHighScore;
+        }
+    } catch (error) {
+        console.error("Error fetching personal high score: ", error);
     }
 }
 
@@ -249,16 +267,17 @@ function draw() {
 function checkHighScore() {
     let lowestHighScore = highScores[highScores.length - 1]?.score || 0;
     if (score > lowestHighScore || highScores.length < 5) {
-        document.getElementById("nameEntry").style.display = "block";
+        saveHighScore();
     }
 }
 
 window.saveHighScore = async function() {
-    let name = document.getElementById("playerName").value;
-    if (!name) return;
+    if (!currentUser) return;
+    const name = currentUser.email;
     try {
         await addDoc(collection(db, "highScores"), {
             name: name,
+            email: currentUser.email,
             score: score,
             timestamp: new Date()
         });
