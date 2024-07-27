@@ -32,10 +32,14 @@ let frameDelay = 1000 / frameRate;
 document.addEventListener("keydown", handleKeydown);
 
 async function fetchHighScores() {
-    const highScoresQuery = db.collection("highScores").orderBy("score", "desc").limit(5);
-    const querySnapshot = await highScoresQuery.get();
-    highScores = querySnapshot.docs.map(doc => doc.data());
-    displayHighScores();
+    try {
+        const highScoresQuery = db.collection("highScores").orderBy("score", "desc").limit(5);
+        const querySnapshot = await highScoresQuery.get();
+        highScores = querySnapshot.docs.map(doc => doc.data());
+        displayHighScores();
+    } catch (error) {
+        console.error("Error fetching high scores: ", error);
+    }
 }
 
 function handleKeydown(event) {
@@ -59,10 +63,11 @@ function startGame() {
     };
     score = 0;
     d = null;
-    speed = 150; // Starting speed adjusted to 150ms per frame
+    speed = 150; // Adjusted speed
     lastTime = 0;
     frameRate = 10;
     frameDelay = 1000 / frameRate;
+    console.log("Game started");
     game = requestAnimationFrame(loop);
 }
 
@@ -78,6 +83,7 @@ function direction(event) {
     else if (event.keyCode == 38 && d != "DOWN") d = "UP";
     else if (event.keyCode == 39 && d != "LEFT") d = "RIGHT";
     else if (event.keyCode == 40 && d != "UP") d = "DOWN";
+    console.log("Direction: ", d);
 }
 
 function collision(newHead, array) {
@@ -120,7 +126,7 @@ function draw() {
             y: Math.floor(Math.random() * canvasSize) * box
         };
         if (speed > 50) {
-            speed -= 2; // Adjust speed decrease rate if needed
+            speed -= 5; // Adjust speed decrease rate if needed
         }
     } else {
         snake.pop();
