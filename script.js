@@ -158,7 +158,7 @@ function checkHighScore() {
     }
 }
 
-async function saveHighScore() {
+window.saveHighScore = async function() {
     let name = document.getElementById("playerName").value;
     if (!name) return;
     try {
