@@ -176,6 +176,7 @@ function startPhaserGame() {
         width: 800,
         height: 600,
         backgroundColor: '#000000',
+        parent: 'gameContainer',
         physics: {
             default: 'arcade',
             arcade: {
@@ -211,27 +212,16 @@ function create() {
     scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#FFFFFF' });
 
     cursors = this.input.keyboard.createCursorKeys();
+
+    this.time.addEvent({
+        delay: 100,
+        callback: moveSnake,
+        callbackScope: this,
+        loop: true
+    });
 }
 
-function update() {
-    if (cursors.left.isDown && direction !== 'RIGHT') {
-        newDirection = 'LEFT';
-    } else if (cursors.right.isDown && direction !== 'LEFT') {
-        newDirection = 'RIGHT';
-    } else if (cursors.up.isDown && direction !== 'DOWN') {
-        newDirection = 'UP';
-    } else if (cursors.down.isDown && direction !== 'UP') {
-        newDirection = 'DOWN';
-    }
-
-    if (Phaser.Geom.Intersects.CircleToRectangle(food, snake.getChildren()[0].body)) {
-        food.setPosition(Phaser.Math.Between(0, 800), Phaser.Math.Between(0, 600));
-        let newPart = snake.create(-10, -10, 'snake');
-        newPart.body.setSize(16, 16);
-        score += 10;
-        scoreText.setText('Score: ' + score);
-    }
-
+function moveSnake() {
     let tail = snake.getChildren().pop();
     tail.x = snake.getChildren()[0].x;
     tail.y = snake.getChildren()[0].y;
@@ -249,11 +239,31 @@ function update() {
     snake.getChildren().unshift(tail);
     direction = newDirection;
 
+    if (Phaser.Geom.Intersects.CircleToRectangle(food, snake.getChildren()[0].body)) {
+        food.setPosition(Phaser.Math.Between(0, 800), Phaser.Math.Between(0, 600));
+        let newPart = snake.create(-10, -10, 'snake');
+        newPart.body.setSize(16, 16);
+        score += 10;
+        scoreText.setText('Score: ' + score);
+    }
+
     // Check for collision with self or walls
     if (tail.x < 0 || tail.y < 0 || tail.x >= 800 || tail.y >= 600 || collision(tail, snake.getChildren().slice(1))) {
         this.physics.pause();
         saveHighScore();
         scoreText.setText('Game Over! Score: ' + score);
+    }
+}
+
+function update() {
+    if (cursors.left.isDown && direction !== 'RIGHT') {
+        newDirection = 'LEFT';
+    } else if (cursors.right.isDown && direction !== 'LEFT') {
+        newDirection = 'RIGHT';
+    } else if (cursors.up.isDown && direction !== 'DOWN') {
+        newDirection = 'UP';
+    } else if (cursors.down.isDown && direction !== 'UP') {
+        newDirection = 'DOWN';
     }
 }
 
