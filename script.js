@@ -1,5 +1,9 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
 // Your web app's Firebase configuration
-var firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyCdV-b9VrWRIQXbn9RcXEZf9tZh_ltrdlM",
     authDomain: "snake-150af.firebaseapp.com",
     projectId: "snake-150af",
@@ -8,9 +12,10 @@ var firebaseConfig = {
     appId: "1:896495502826:web:9a54c439c765ee81d4de93",
     measurementId: "G-C5FVFL7BHM"
 };
+
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -33,8 +38,8 @@ document.addEventListener("keydown", handleKeydown);
 
 async function fetchHighScores() {
     try {
-        const highScoresQuery = db.collection("highScores").orderBy("score", "desc").limit(5);
-        const querySnapshot = await highScoresQuery.get();
+        const highScoresQuery = query(collection(db, "highScores"), orderBy("score", "desc"), limit(5));
+        const querySnapshot = await getDocs(highScoresQuery);
         highScores = querySnapshot.docs.map(doc => doc.data());
         displayHighScores();
     } catch (error) {
@@ -43,9 +48,7 @@ async function fetchHighScores() {
 }
 
 function handleKeydown(event) {
-    console.log("Keydown event detected");
     if (!gameStarted) {
-        console.log("Starting game");
         startGame();
         direction(event);
     } else {
@@ -69,7 +72,6 @@ function startGame() {
     lastTime = 0;
     frameRate = 10;
     frameDelay = 1000 / frameRate;
-    console.log("Game started");
     game = requestAnimationFrame(loop);
 }
 
@@ -85,7 +87,6 @@ function direction(event) {
     else if (event.keyCode == 38 && d != "DOWN") d = "UP";
     else if (event.keyCode == 39 && d != "LEFT") d = "RIGHT";
     else if (event.keyCode == 40 && d != "UP") d = "DOWN";
-    console.log("Direction: ", d);
 }
 
 function collision(newHead, array) {
@@ -161,7 +162,7 @@ async function saveHighScore() {
     let name = document.getElementById("playerName").value;
     if (!name) return;
     try {
-        await db.collection("highScores").add({
+        await addDoc(collection(db, "highScores"), {
             name: name,
             score: score,
             timestamp: new Date()
