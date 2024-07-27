@@ -1,8 +1,3 @@
-// Import Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-
 // Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCdV-b9VrWRIQXbn9RcXEZf9tZh_ltrdlM",
@@ -15,9 +10,9 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // Authentication elements
 const authContainer = document.getElementById("authContainer");
@@ -42,17 +37,14 @@ signInForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const email = signInEmail.value;
     const password = signInPassword.value;
-    signInWithEmailAndPassword(auth, email, password)
+    auth.signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
-            // Signed in
             const user = userCredential.user;
             console.log("Signed in as:", user.email);
             fetchHighScores();
         })
         .catch((error) => {
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            console.error("Error signing in:", errorCode, errorMessage);
+            console.error("Error signing in:", error.code, error.message);
         });
 });
 
@@ -74,17 +66,14 @@ showSignUp.addEventListener("click", () => {
         e.preventDefault();
         const email = signUpEmail.value;
         const password = signUpPassword.value;
-        createUserWithEmailAndPassword(auth, email, password)
+        auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                // Signed up
                 const user = userCredential.user;
                 console.log("Signed up as:", user.email);
                 fetchHighScores();
             })
             .catch((error) => {
-                const errorCode = error.code;
-                const errorMessage = error.message;
-                console.error("Error signing up:", errorCode, errorMessage);
+                console.error("Error signing up:", error.code, error.message);
             });
     });
 
@@ -93,9 +82,8 @@ showSignUp.addEventListener("click", () => {
     });
 });
 
-onAuthStateChanged(auth, (user) => {
+auth.onAuthStateChanged((user) => {
     if (user) {
-        // User is signed in
         console.log("User signed in:", user.email);
         currentUser = user;
         document.getElementById("username").innerText = user.email;
@@ -105,7 +93,6 @@ onAuthStateChanged(auth, (user) => {
         mainContainer.style.display = "flex";
         startGame();
     } else {
-        // User is signed out
         console.log("User signed out");
         currentUser = null;
         authContainer.style.display = "block";
@@ -115,8 +102,8 @@ onAuthStateChanged(auth, (user) => {
 
 async function fetchHighScores() {
     try {
-        const highScoresQuery = query(collection(db, "highScores"), orderBy("score", "desc"), limit(5));
-        const querySnapshot = await getDocs(highScoresQuery);
+        const highScoresQuery = db.collection("highScores").orderBy("score", "desc").limit(5);
+        const querySnapshot = await highScoresQuery.get();
         highScores = querySnapshot.docs.map(doc => doc.data());
         displayHighScores();
     } catch (error) {
@@ -126,8 +113,11 @@ async function fetchHighScores() {
 
 async function fetchPersonalHighScore(email) {
     try {
-        const personalHighScoreQuery = query(collection(db, "highScores"), where("email", "==", email), orderBy("score", "desc"), limit(1));
-        const querySnapshot = await getDocs(personalHighScoreQuery);
+        const personalHighScoreQuery = db.collection("highScores")
+            .where("email", "==", email)
+            .orderBy("score", "desc")
+            .limit(1);
+        const querySnapshot = await personalHighScoreQuery.get();
         if (!querySnapshot.empty) {
             const userHighScore = querySnapshot.docs[0].data().score;
             personalHighScore = userHighScore;
@@ -151,7 +141,7 @@ function displayHighScores() {
 async function saveHighScore() {
     if (!currentUser) return;
     try {
-        await addDoc(collection(db, "highScores"), {
+        await db.collection("highScores").add({
             name: currentUser.email,
             score: score,
             timestamp: new Date()
@@ -169,6 +159,15 @@ function startGame() {
     canvas.height = 600;
 
     document.addEventListener("keydown", changeDirection);
+    snake = [
+        { x: 150, y: 150 },
+        { x: 140, y: 150 },
+        { x: 130, y: 150 },
+        { x: 120, y: 150 },
+        { x: 110, y: 150 }
+    ];
+    direction = { x: 10, y: 0 };
+    score = 0;
     createFood();
     gameInterval = setInterval(main, 100);
 }
@@ -181,6 +180,7 @@ function main() {
         return;
     }
 
+    changingDirection = false;
     clearCanvas();
     drawFood();
     advanceSnake();
@@ -210,7 +210,7 @@ function createFood() {
 }
 
 function advanceSnake() {
-    const head = { x: snake[0].x + direction.x * 10, y: snake[0].y + direction.y * 10 };
+    const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
     snake.unshift(head);
     if (head.x === food.x && head.y === food.y) {
         score += 10;
@@ -236,22 +236,22 @@ function changeDirection(event) {
     const DOWN_KEY = 40;
 
     const keyPressed = event.keyCode;
-    const goingUp = direction.y === -1;
-    const goingDown = direction.y === 1;
-    const goingRight = direction.x === 1;
-    const goingLeft = direction.x === -1;
+    const goingUp = direction.y === -10;
+    const goingDown = direction.y === 10;
+    const goingRight = direction.x === 10;
+    const goingLeft = direction.x === -10;
 
     if (keyPressed === LEFT_KEY && !goingRight) {
-        direction = { x: -1, y: 0 };
+        direction = { x: -10, y: 0 };
     }
     if (keyPressed === UP_KEY && !goingDown) {
-        direction = { x: 0, y: -1 };
+        direction = { x: 0, y: -10 };
     }
     if (keyPressed === RIGHT_KEY && !goingLeft) {
-        direction = { x: 1, y: 0 };
+        direction = { x: 10, y: 0 };
     }
     if (keyPressed === DOWN_KEY && !goingUp) {
-        direction = { x: 0, y: 1 };
+        direction = { x: 0, y: 10 };
     }
 }
 
