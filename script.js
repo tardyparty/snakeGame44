@@ -1,22 +1,16 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, orderBy, query, limit } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyCdV-b9VrWRIQXbn9RcXEZf9tZh_ltrdlM",
-  authDomain: "snake-150af.firebaseapp.com",
-  projectId: "snake-150af",
-  storageBucket: "snake-150af.appspot.com",
-  messagingSenderId: "896495502826",
-  appId: "1:896495502826:web:9a54c439c765ee81d4de93",
-  measurementId: "G-C5FVFL7BHM"
+// Firebase configuration
+var firebaseConfig = {
+    apiKey: "AIzaSyCdV-b9VrWRIQXbn9RcXEZf9tZh_ltrdlM",
+    authDomain: "snake-150af.firebaseapp.com",
+    projectId: "snake-150af",
+    storageBucket: "snake-150af.appspot.com",
+    messagingSenderId: "896495502826",
+    appId: "1:896495502826:web:9a54c439c765ee81d4de93",
+    measurementId: "G-C5FVFL7BHM"
 };
-
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -38,8 +32,8 @@ let frameDelay = 1000 / frameRate;
 document.addEventListener("keydown", handleKeydown);
 
 async function fetchHighScores() {
-    const highScoresQuery = query(collection(db, "highScores"), orderBy("score", "desc"), limit(5));
-    const querySnapshot = await getDocs(highScoresQuery);
+    const highScoresQuery = db.collection("highScores").orderBy("score", "desc").limit(5);
+    const querySnapshot = await highScoresQuery.get();
     highScores = querySnapshot.docs.map(doc => doc.data());
     displayHighScores();
 }
@@ -159,7 +153,7 @@ async function saveHighScore() {
     let name = document.getElementById("playerName").value;
     if (!name) return;
     try {
-        await addDoc(collection(db, "highScores"), {
+        await db.collection("highScores").add({
             name: name,
             score: score,
             timestamp: new Date()
@@ -182,4 +176,3 @@ function displayHighScores() {
 }
 
 fetchHighScores();
-
