@@ -198,8 +198,8 @@ function preload() {
 
 function create() {
     snake = this.physics.add.group();
-
-    for (let i = 0; i < 3; i++) {
+    const snakeLength = 3;
+    for (let i = 0; i < snakeLength; i++) {
         let part = snake.create(100 + i * 16, 100, 'snake');
         part.body.setSize(16, 16);
         part.body.setCollideWorldBounds(true);
