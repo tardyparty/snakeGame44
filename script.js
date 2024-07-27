@@ -61,14 +61,9 @@ function handleKeydown(event) {
 
 function startGame() {
     gameStarted = true;
-    const instructions = document.getElementById("instructions");
-    const gameOver = document.getElementById("gameOver");
-    const nameEntry = document.getElementById("nameEntry");
-
-    if (instructions) instructions.style.display = "none";
-    if (gameOver) gameOver.style.display = "none";
-    if (nameEntry) nameEntry.style.display = "none";
-
+    document.getElementById("instructions").style.display = "none";
+    document.getElementById("gameOver").style.display = "none";
+    document.getElementById("nameEntry").style.display = "none";
     snake = [{ x: 9 * box, y: 9 * box }];
     food = {
         x: Math.floor(Math.random() * canvasSize) * box,
@@ -85,8 +80,7 @@ function startGame() {
 
 function resetGame() {
     gameStarted = false;
-    const instructions = document.getElementById("instructions");
-    if (instructions) instructions.style.display = "block";
+    document.getElementById("instructions").style.display = "block";
     cancelAnimationFrame(game);
     startGame();
 }
@@ -149,6 +143,7 @@ function draw() {
 
     let newHead = { x: snakeX, y: snakeY };
 
+    // Check collision with walls
     if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision(newHead, snake)) {
         cancelAnimationFrame(game);
         document.getElementById("finalScore").innerText = score;
@@ -158,6 +153,7 @@ function draw() {
             personalHighScore = score;
             document.getElementById("personalHighScore").innerText = personalHighScore;
         }
+        gameStarted = false; // Ensure game does not continue after game over
         return;
     }
 
