@@ -1,9 +1,9 @@
-// Import the functions you need from the SDKs you need
+// Import Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
-// Your web app's Firebase configuration
+// Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCdV-b9VrWRIQXbn9RcXEZf9tZh_ltrdlM",
     authDomain: "snake-150af.firebaseapp.com",
@@ -16,8 +16,8 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 // Authentication elements
 const authContainer = document.getElementById("authContainer");
@@ -30,16 +30,12 @@ const showSignUp = document.getElementById("showSignUp");
 let currentUser = null;
 let personalHighScore = 0;
 let highScores = [];
-let game;
-let snake;
-let food;
-let cursors;
+let gameInterval;
+let canvas, ctx;
+let snake = [];
+let direction = { x: 1, y: 0 };
+let food = { x: 0, y: 0 };
 let score = 0;
-let scoreText;
-let direction = 'RIGHT';
-let newDirection = 'RIGHT';
-let gameStarted = false;
-let gameOver = false;
 
 // Authentication logic
 signInForm.addEventListener("submit", (e) => {
@@ -107,9 +103,7 @@ onAuthStateChanged(auth, (user) => {
         fetchHighScores();
         authContainer.style.display = "none";
         mainContainer.style.display = "flex";
-        if (!gameStarted) {
-            startPhaserGame();
-        }
+        startGame();
     } else {
         // User is signed out
         console.log("User signed out");
@@ -156,11 +150,9 @@ function displayHighScores() {
 
 async function saveHighScore() {
     if (!currentUser) return;
-    const name = currentUser.email;
     try {
         await addDoc(collection(db, "highScores"), {
-            name: name,
-            email: currentUser.email,
+            name: currentUser.email,
             score: score,
             timestamp: new Date()
         });
@@ -170,112 +162,108 @@ async function saveHighScore() {
     }
 }
 
-function startPhaserGame() {
-    gameStarted = true;
-    gameOver = false;
-    score = 0;
-    direction = 'RIGHT';
-    newDirection = 'RIGHT';
+function startGame() {
+    canvas = document.getElementById("gameCanvas");
+    ctx = canvas.getContext("2d");
+    canvas.width = 800;
+    canvas.height = 600;
 
-    const config = {
-        type: Phaser.AUTO,
-        width: 800,
-        height: 600,
-        backgroundColor: '#000000',
-        parent: 'gameContainer',
-        physics: {
-            default: 'arcade',
-            arcade: {
-                debug: false
-            }
-        },
-        scene: {
-            preload: preload,
-            create: create,
-            update: update
-        }
-    };
-
-    game = new Phaser.Game(config);
+    document.addEventListener("keydown", changeDirection);
+    createFood();
+    gameInterval = setInterval(main, 100);
 }
 
-function preload() {
-    // No assets to preload
-}
-
-function create() {
-    snake = this.physics.add.group();
-    const snakeLength = 3;
-    for (let i = 0; i < snakeLength; i++) {
-        let part = snake.create(100 + i * 16, 100, 'snake');
-        part.body.setSize(16, 16);
-        part.body.setCollideWorldBounds(true);
+function main() {
+    if (hasGameEnded()) {
+        clearInterval(gameInterval);
+        saveHighScore();
+        alert(`Game Over! Score: ${score}`);
+        return;
     }
 
-    food = this.add.circle(200, 200, 8, 0xff0000);
-    this.physics.add.existing(food);
+    clearCanvas();
+    drawFood();
+    advanceSnake();
+    drawSnake();
+}
 
-    scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#FFFFFF' });
+function clearCanvas() {
+    ctx.fillStyle = "black";
+    ctx.strokestyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+}
 
-    cursors = this.input.keyboard.createCursorKeys();
+function drawFood() {
+    ctx.fillStyle = "red";
+    ctx.strokestyle = "darkred";
+    ctx.fillRect(food.x, food.y, 10, 10);
+    ctx.strokeRect(food.x, food.y, 10, 10);
+}
 
-    this.time.addEvent({
-        delay: 150, // Slower initial speed
-        callback: moveSnake,
-        callbackScope: this,
-        loop: true
+function createFood() {
+    food.x = Math.floor(Math.random() * 79) * 10;
+    food.y = Math.floor(Math.random() * 59) * 10;
+    snake.forEach(part => {
+        if (part.x === food.x && part.y === food.y) createFood();
     });
 }
 
-function moveSnake() {
-    if (gameOver) return; // Do nothing if the game is over
-
-    let tail = snake.getChildren().pop();
-    tail.x = snake.getChildren()[0].x;
-    tail.y = snake.getChildren()[0].y;
-
-    if (newDirection === 'LEFT') {
-        tail.x -= 16;
-    } else if (newDirection === 'RIGHT') {
-        tail.x += 16;
-    } else if (newDirection === 'UP') {
-        tail.y -= 16;
-    } else if (newDirection === 'DOWN') {
-        tail.y += 16;
-    }
-
-    snake.getChildren().unshift(tail);
-    direction = newDirection;
-
-    if (Phaser.Geom.Intersects.CircleToRectangle(food, snake.getChildren()[0].body)) {
-        food.setPosition(Phaser.Math.Between(0, 784), Phaser.Math.Between(0, 584));
-        let newPart = snake.create(-10, -10, 'snake');
-        newPart.body.setSize(16, 16);
+function advanceSnake() {
+    const head = { x: snake[0].x + direction.x * 10, y: snake[0].y + direction.y * 10 };
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
         score += 10;
-        scoreText.setText('Score: ' + score);
-    }
-
-    // Check for collision with self or walls
-    if (tail.x < 0 || tail.y < 0 || tail.x >= 800 || tail.y >= 600 || collision(tail, snake.getChildren().slice(1))) {
-        gameOver = true;
-        this.physics.pause();
-        saveHighScore();
-        scoreText.setText('Game Over! Score: ' + score);
+        createFood();
+    } else {
+        snake.pop();
     }
 }
 
-function update() {
-    if (cursors.left.isDown && direction !== 'RIGHT') {
-        newDirection = 'LEFT';
-    } else if (cursors.right.isDown && direction !== 'LEFT') {
-        newDirection = 'RIGHT';
-    } else if (cursors.up.isDown && direction !== 'DOWN') {
-        newDirection = 'UP';
-    } else if (cursors.down.isDown && direction !== 'UP') {
-        newDirection = 'DOWN';
+function drawSnake() {
+    snake.forEach(part => {
+        ctx.fillStyle = "lightgreen";
+        ctx.strokestyle = "darkgreen";
+        ctx.fillRect(part.x, part.y, 10, 10);
+        ctx.strokeRect(part.x, part.y, 10, 10);
+    });
+}
+
+function changeDirection(event) {
+    const LEFT_KEY = 37;
+    const RIGHT_KEY = 39;
+    const UP_KEY = 38;
+    const DOWN_KEY = 40;
+
+    const keyPressed = event.keyCode;
+    const goingUp = direction.y === -1;
+    const goingDown = direction.y === 1;
+    const goingRight = direction.x === 1;
+    const goingLeft = direction.x === -1;
+
+    if (keyPressed === LEFT_KEY && !goingRight) {
+        direction = { x: -1, y: 0 };
+    }
+    if (keyPressed === UP_KEY && !goingDown) {
+        direction = { x: 0, y: -1 };
+    }
+    if (keyPressed === RIGHT_KEY && !goingLeft) {
+        direction = { x: 1, y: 0 };
+    }
+    if (keyPressed === DOWN_KEY && !goingUp) {
+        direction = { x: 0, y: 1 };
     }
 }
 
-function collision(newHead, array) {
-    return array.some(segment => segment.x === newHead.x && segment.y === newHead.y);
+function hasGameEnded() {
+    for (let i = 4; i < snake.length; i++) {
+        const hasCollided = snake[i].x === snake[0].x && snake[i].y === snake[0].y;
+        if (hasCollided) return true;
+    }
+    const hitLeftWall = snake[0].x < 0;
+    const hitRightWall = snake[0].x > canvas.width - 10;
+    const hitTopWall = snake[0].y < 0;
+    const hitBottomWall = snake[0].y > canvas.height - 10;
+
+    return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
 }
