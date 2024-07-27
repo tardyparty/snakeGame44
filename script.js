@@ -172,6 +172,11 @@ async function saveHighScore() {
 
 function startPhaserGame() {
     gameStarted = true;
+    gameOver = false;
+    score = 0;
+    direction = 'RIGHT';
+    newDirection = 'RIGHT';
+
     const config = {
         type: Phaser.AUTO,
         width: 800,
