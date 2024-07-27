@@ -21,6 +21,8 @@ const signInForm = document.getElementById("signInForm");
 const signInEmail = document.getElementById("signInEmail");
 const signInPassword = document.getElementById("signInPassword");
 const showSignUp = document.getElementById("showSignUp");
+const gameOverMessage = document.getElementById("gameOverMessage");
+const playAgainButton = document.getElementById("playAgainButton");
 
 let currentUser = null;
 let personalHighScore = 0;
@@ -31,7 +33,8 @@ let snake = [];
 let direction = { x: 1, y: 0 };
 let food = { x: 0, y: 0 };
 let score = 0;
-let changingDirection = false;  // Initialize the changingDirection variable
+let changingDirection = false;
+let gameStarted = false;
 
 // Authentication logic
 signInForm.addEventListener("submit", (e) => {
@@ -92,7 +95,6 @@ auth.onAuthStateChanged((user) => {
         fetchHighScores();
         authContainer.style.display = "none";
         mainContainer.style.display = "flex";
-        startGame();
     } else {
         console.log("User signed out");
         currentUser = null;
@@ -156,32 +158,45 @@ async function saveHighScore() {
 function startGame() {
     canvas = document.getElementById("gameCanvas");
     ctx = canvas.getContext("2d");
-    canvas.width = 800;
-    canvas.height = 600;
+    canvas.width = 560; // 70% of the original 800px width
+    canvas.height = 420; // 70% of the original 600px height
 
-    document.addEventListener("keydown", changeDirection);
+    document.addEventListener("keydown", handleFirstKeyDown);
+
+    gameOverMessage.style.display = "none";
+    playAgainButton.style.display = "none";
+
     snake = [
-        { x: 150, y: 150 },
-        { x: 140, y: 150 },
-        { x: 130, y: 150 },
-        { x: 120, y: 150 },
-        { x: 110, y: 150 }
+        { x: 50, y: 50 },
+        { x: 40, y: 50 }
     ];
     direction = { x: 10, y: 0 };
     score = 0;
+    changingDirection = false;
+    gameStarted = false;
     createFood();
-    gameInterval = setInterval(main, 100);
+}
+
+function handleFirstKeyDown(event) {
+    const keyPressed = event.keyCode;
+    if ([37, 38, 39, 40].includes(keyPressed) && !gameStarted) {
+        document.removeEventListener("keydown", handleFirstKeyDown);
+        document.addEventListener("keydown", changeDirection);
+        gameStarted = true;
+        gameInterval = setInterval(main, 100);
+    }
 }
 
 function main() {
     if (hasGameEnded()) {
         clearInterval(gameInterval);
         saveHighScore();
-        alert(`Game Over! Score: ${score}`);
+        gameOverMessage.style.display = "block";
+        playAgainButton.style.display = "block";
         return;
     }
 
-    changingDirection = false;  // Reset changingDirection to false
+    changingDirection = false;
     clearCanvas();
     drawFood();
     advanceSnake();
@@ -203,8 +218,8 @@ function drawFood() {
 }
 
 function createFood() {
-    food.x = Math.floor(Math.random() * 79) * 10;
-    food.y = Math.floor(Math.random() * 59) * 10;
+    food.x = Math.floor(Math.random() * 55) * 10;
+    food.y = Math.floor(Math.random() * 41) * 10;
     snake.forEach(part => {
         if (part.x === food.x && part.y === food.y) createFood();
     });
@@ -255,18 +270,22 @@ function changeDirection(event) {
         direction = { x: 0, y: 10 };
     }
 
-    changingDirection = true;  // Set changingDirection to true when direction changes
+    changingDirection = true;
 }
 
 function hasGameEnded() {
-    for (let i = 4; i < snake.length; i++) {
+    for (let i = 1; i < snake.length; i++) {
         const hasCollided = snake[i].x === snake[0].x && snake[i].y === snake[0].y;
         if (hasCollided) return true;
     }
     const hitLeftWall = snake[0].x < 0;
-    const hitRightWall = snake[0].x > canvas.width - 10;
+    const hitRightWall = snake[0].x >= canvas.width;
     const hitTopWall = snake[0].y < 0;
-    const hitBottomWall = snake[0].y > canvas.height - 10;
+    const hitBottomWall = snake[0].y >= canvas.height;
 
     return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
 }
+
+playAgainButton.addEventListener("click", () => {
+    startGame();
+});
