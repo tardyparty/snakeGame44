@@ -30,6 +30,15 @@ const showSignUp = document.getElementById("showSignUp");
 let currentUser = null;
 let personalHighScore = 0;
 let highScores = [];
+let game;
+let snake;
+let food;
+let cursors;
+let score = 0;
+let scoreText;
+let direction = 'RIGHT';
+let newDirection = 'RIGHT';
+let gameStarted = false;
 
 // Authentication logic
 signInForm.addEventListener("submit", (e) => {
@@ -97,7 +106,9 @@ onAuthStateChanged(auth, (user) => {
         fetchHighScores();
         authContainer.style.display = "none";
         mainContainer.style.display = "flex";
-        startPhaserGame();
+        if (!gameStarted) {
+            startPhaserGame();
+        }
     } else {
         // User is signed out
         console.log("User signed out");
@@ -158,17 +169,8 @@ async function saveHighScore() {
     }
 }
 
-// Phaser game setup
-let game;
-let snake;
-let food;
-let cursors;
-let score = 0;
-let scoreText;
-let direction = 'RIGHT';
-let newDirection = 'RIGHT';
-
 function startPhaserGame() {
+    gameStarted = true;
     const config = {
         type: Phaser.AUTO,
         width: 800,
@@ -191,8 +193,7 @@ function startPhaserGame() {
 }
 
 function preload() {
-    this.load.image('snake', 'assets/snake.png');
-    this.load.image('food', 'assets/food.png');
+    // No assets to preload
 }
 
 function create() {
@@ -204,8 +205,8 @@ function create() {
         part.body.setCollideWorldBounds(true);
     }
 
-    food = this.physics.add.image(200, 200, 'food');
-    food.setCollideWorldBounds(true);
+    food = this.add.circle(200, 200, 8, 0xff0000);
+    this.physics.add.existing(food);
 
     scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#FFFFFF' });
 
@@ -223,7 +224,7 @@ function update() {
         newDirection = 'DOWN';
     }
 
-    if (Phaser.Geom.Intersects.RectangleToRectangle(snake.getChildren()[0].getBounds(), food.getBounds())) {
+    if (Phaser.Geom.Intersects.CircleToRectangle(food, snake.getChildren()[0].body)) {
         food.setPosition(Phaser.Math.Between(0, 800), Phaser.Math.Between(0, 600));
         let newPart = snake.create(-10, -10, 'snake');
         newPart.body.setSize(16, 16);
