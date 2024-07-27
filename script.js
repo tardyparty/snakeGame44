@@ -14,13 +14,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const box = 20;
+const box = 25; // Adjusted for the larger canvas size
 const canvasSize = 20;
 let snake;
 let food;
@@ -34,6 +31,9 @@ let lastTime = 0;
 let frameRate = 10;
 let frameDelay = 1000 / frameRate;
 let personalHighScore = 0;
+
+// Rest of your JavaScript code remains the same
+
 
 document.addEventListener("keydown", handleKeydown);
 
